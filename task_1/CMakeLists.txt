@@ -8,7 +8,7 @@ add_executable(courseraRedBelt
         main.cpp
         iterator_range.h
         profile.h
-        test_runner.h)
+        test_runner.h hash_set.cpp)
 
 #set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O2")
 #set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O2")
