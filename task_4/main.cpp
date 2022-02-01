@@ -7,8 +7,6 @@
 
 using namespace std;
 
-using id_pointer = string*;
-
 struct Record {
     string id;
     string title;
@@ -123,7 +121,7 @@ private:
 
     multimap<int, const string*> time_map;
     multimap<int, const string*> karma_map;
-    multimap<string, const id_pointer> user_map;
+    multimap<string, const string*> user_map;
 };
 
 void TestRangeBoundaries() {
