@@ -16,82 +16,94 @@ struct Record {
     int karma;
 };
 
-using multiMapIntIter = multimap<int, const Record*>::const_iterator;
-using multiMapStringIter = multimap<string, const Record*>::const_iterator;
+template<typename Type>
+using Index = multimap<Type, const Record *>;
 
-struct RecordMultiMap {
-    const Record* record;
-    multiMapIntIter time_it;
-    multiMapIntIter karma_it;
-    multiMapStringIter user_it;
+struct Data {
+    Record record;
+    Index<int>::iterator timestamp_iter;
+    Index<int>::iterator karma_iter;
+    Index<string>::iterator user_iter;
 };
 
 class Database {
 public:
     bool Put(const Record &record) {
-        auto [pos, YES] = data.try_emplace(record.id, RecordMultiMap{&record, {}, {}, {}});
+        auto[it, inserted] = storage.insert({record.id, Data{record, {}, {}, {}}});
 
-        if (YES) {
-            pos->second.karma_it = karma_index.insert({record.karma, &record});
-            pos->second.time_it = time_index.insert({record.timestamp, &record});
-            pos->second.user_it = user_index.insert({record.user, &record});
+        if (!inserted) {
+            return false;
         }
-        return YES;
+
+        auto &data = it->second;
+        const Record *ptr = &data.record;
+        data.timestamp_iter = timestamp_index.insert({record.timestamp, ptr});
+        data.karma_iter = karma_index.insert({record.karma, ptr});
+        data.user_iter = user_index.insert({record.user, ptr});
+
+        return true;
     }
 
     const Record *GetById(const string &id) const {
-        auto it = data.find(id);
-        if (it != data.end()) {
-            return it->second.record;
+        auto it = storage.find(id);
+        if (it == storage.end()) {
+            return nullptr;
         }
-        return nullptr;
+        return &it->second.record;
     }
 
     bool Erase(const string &id) {
-        auto it = data.find(id);
-        if (it != data.end()) {
-            time_index.erase(it->second.time_it);
-            karma_index.erase(it->second.karma_it);
-            user_index.erase(it->second.user_it);
-            data.erase(it->second.record->id);
-            return true;
+        auto it = storage.find(id);
+        if (it == storage.end()) {
+            return false;
         }
-        return false;
+
+        const auto& data = it->second;
+        timestamp_index.erase(data.timestamp_iter);
+        karma_index.erase(data.karma_iter);
+        user_index.erase(data.user_iter);
+        storage.erase(it);
+        return true;
     }
 
     template<typename Callback>
-    void RangeByTimestamp(int low, int high, Callback callback) const {
-        for(auto it = time_index.lower_bound(low); it != time_index.upper_bound(high); it++) {
+    void RangeByTimestamp(int low, int high, const Callback &callback) const {
+        auto it_begin = timestamp_index.lower_bound(low);
+        auto it_end = timestamp_index.upper_bound(high);
+        for (auto it = it_begin; it != it_end; it++) {
             if (!callback(*it->second)) {
-                return;
+                break;
             }
         }
     }
 
     template<typename Callback>
-    void RangeByKarma(int low, int high, Callback callback) const {
-        for(auto it = karma_index.lower_bound(low); it != karma_index.upper_bound(high); it++) {
+    void RangeByKarma(int low, int high, const Callback &callback) const {
+        auto it_begin = karma_index.lower_bound(low);
+        auto it_end = karma_index.upper_bound(high);
+        for (auto it = it_begin; it != it_end; it++) {
             if (!callback(*it->second)) {
-                return;
+                break;
             }
         }
     }
 
     template<typename Callback>
-    void AllByUser(const string &user, Callback callback) const {
-        for(auto it = user_index.lower_bound(user); it != user_index.upper_bound(user); it++) {
+    void AllByUser(const string &user, const Callback &callback) const {
+        auto[it_begin, it_end] = user_index.equal_range(user);
+        for (auto it = it_begin; it != it_end; it++) {
             if (!callback(*it->second)) {
-                return;
+                break;
             }
         }
     }
 
 private:
-    unordered_map<string, RecordMultiMap> data;
+    unordered_map<string, Data> storage;
 
-    multimap<int, const Record*, hash<int>> time_index;
-    multimap<int, const Record*, hash<int>> karma_index;
-    multimap<string, const Record*, hash<string>> user_index;
+    Index<int> timestamp_index;
+    Index<int> karma_index;
+    Index<string> user_index;
 };
 
 void TestRangeBoundaries() {
@@ -104,7 +116,7 @@ void TestRangeBoundaries() {
     db.Put({"id3", "O>>-<", "general2", 1536107260, 0});
 
     int count = 0;
-    db.RangeByKarma(bad_karma, good_karma, [&count](const Record & record) {
+    db.RangeByKarma(bad_karma, good_karma, [&count](const Record &record) {
         if (record.id == "id1") {
             return false;
         }
@@ -125,7 +137,7 @@ void TestRangeTime() {
     db.Put({"id3", "O>>-<", "general2", 1536107460, 0});
 
     int count = 0;
-    db.RangeByTimestamp(1536107259, 1536107460, [&count](const Record & record) {
+    db.RangeByTimestamp(1536107259, 1536107460, [&count](const Record &record) {
         ++count;
         return true;
     });
