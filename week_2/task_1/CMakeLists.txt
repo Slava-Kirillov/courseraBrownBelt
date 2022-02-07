@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD 17)
 add_executable(courseraRedBelt
         main.cpp
         profile.h
-        test_runner.h)
+        test_runner.h Ini.h Ini.cpp)
 
 #set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O2")
 #set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -O2")
