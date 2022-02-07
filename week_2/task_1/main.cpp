@@ -1,6 +1,6 @@
 #include "test_runner.h"
 
-#include "Ini.h"
+#include "ini.h"
 
 #include <sstream>
 

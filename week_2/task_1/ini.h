@@ -19,7 +19,7 @@ namespace Ini {
         size_t SectionCount() const;
 
     private:
-        unordered_map <string, Section> sections;
+        unordered_map<string, Section> sections;
     };
 
     Document Load(istream &input);

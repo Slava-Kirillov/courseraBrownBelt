@@ -1,4 +1,4 @@
-#include "Ini.h"
+#include "ini.h"
 
 namespace Ini {
 
@@ -15,16 +15,11 @@ namespace Ini {
 
 
     Section &Document::AddSection(string name) {
-        auto[it, inserted] = sections.insert({move(name), {}});
-        return it->second;
+        return sections[move(name)];
     }
 
     const Section &Document::GetSection(const string &name) const {
-        auto it = sections.find(name);
-        if (it != sections.end()) {
-            return it->second;
-        }
-        throw out_of_range("Unknown section");
+        return sections.at(name);
     }
 
     size_t Document::SectionCount() const {
