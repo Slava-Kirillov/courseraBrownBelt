@@ -284,6 +284,3 @@ int main() {
     RUN_TEST(tr, TestServer<CommentServer>);
     RUN_TEST(tr, TestFunc);
 }
-
-
-
