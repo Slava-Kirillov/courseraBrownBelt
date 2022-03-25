@@ -8,7 +8,7 @@
 using namespace std;
 
 template<typename T>
-void PrintCoeff(std::ostream& out, int i, const T& coef, bool printed) {
+void PrintCoeff(std::ostream &out, int i, const T &coef, bool printed) {
     bool coeffPrinted = false;
     if (coef == 1 && i > 0) {
         out << (printed ? "+" : "");
@@ -42,6 +42,7 @@ private:
 
 public:
     Polynomial() = default;
+
     Polynomial(vector<T> coeffs) : coeffs_(std::move(coeffs)) {
         Shrink();
     }
@@ -51,11 +52,39 @@ public:
         Shrink();
     }
 
-    bool operator ==(const Polynomial& other) const {
+    class IndexProxy {
+    public:
+        IndexProxy(Polynomial &poly, size_t degree) : poly_(poly), degree_(degree) {};
+
+        IndexProxy &operator=(const T &new_value) {
+            if (degree_ > poly_.coeffs_.size()) {
+                poly_.coeffs_.resize(degree_ + 1);
+                poly_.coeffs_[degree_] = new_value;
+//                value = new_value;
+            } else {
+                poly_.coeffs_[degree_] = new_value;
+//                value = new_value;
+            }
+            poly_.Shrink();
+
+            return *this;
+        }
+
+        operator T() const {
+// Вызываем константную версию Polynomial::operator[]
+            return std::as_const(poly_)[degree_];
+        }
+
+    private:
+        Polynomial &poly_;
+        size_t degree_;
+    };
+
+    bool operator==(const Polynomial &other) const {
         return coeffs_ == other.coeffs_;
     }
 
-    bool operator !=(const Polynomial& other) const {
+    bool operator!=(const Polynomial &other) const {
         return !operator==(other);
     }
 
@@ -63,7 +92,7 @@ public:
         return coeffs_.size() - 1;
     }
 
-    Polynomial& operator +=(const Polynomial& r) {
+    Polynomial &operator+=(const Polynomial &r) {
         if (r.coeffs_.size() > coeffs_.size()) {
             coeffs_.resize(r.coeffs_.size());
         }
@@ -74,7 +103,7 @@ public:
         return *this;
     }
 
-    Polynomial& operator -=(const Polynomial& r) {
+    Polynomial &operator-=(const Polynomial &r) {
         if (r.coeffs_.size() > coeffs_.size()) {
             coeffs_.resize(r.coeffs_.size());
         }
@@ -85,13 +114,17 @@ public:
         return *this;
     }
 
-    T operator [](size_t degree) const {
+    T operator[](size_t degree) const {
         return degree < coeffs_.size() ? coeffs_[degree] : 0;
+    }
+
+    IndexProxy operator[](size_t degree) {
+        return {*this, degree};
     }
 
     // Реализуйте неконстантную версию operator[]
 
-    T operator ()(const T& x) const {
+    T operator()(const T &x) const {
         T res = 0;
         for (auto it = coeffs_.rbegin(); it != coeffs_.rend(); ++it) {
             res *= x;
@@ -111,8 +144,8 @@ public:
     }
 };
 
-template <typename T>
-std::ostream& operator <<(std::ostream& out, const Polynomial<T>& p) {
+template<typename T>
+std::ostream &operator<<(std::ostream &out, const Polynomial<T> &p) {
     bool printed = false;
     for (int i = p.Degree(); i >= 0; --i) {
         if (p[i] != 0) {
@@ -123,14 +156,14 @@ std::ostream& operator <<(std::ostream& out, const Polynomial<T>& p) {
     return out;
 }
 
-template <typename T>
-Polynomial<T> operator +(Polynomial<T> lhs, const Polynomial<T>& rhs) {
+template<typename T>
+Polynomial<T> operator+(Polynomial<T> lhs, const Polynomial<T> &rhs) {
     lhs += rhs;
     return lhs;
 }
 
-template <typename T>
-Polynomial<T> operator -(Polynomial<T> lhs, const Polynomial<T>& rhs) {
+template<typename T>
+Polynomial<T> operator-(Polynomial<T> lhs, const Polynomial<T> &rhs) {
     lhs -= rhs;
     return lhs;
 }
@@ -213,7 +246,7 @@ void TestEvaluation() {
 }
 
 void TestConstAccess() {
-    const Polynomial<int> poly(std::initializer_list<int> {1, 2, 3, 4, 5});
+    const Polynomial<int> poly(std::initializer_list<int>{1, 2, 3, 4, 5});
 
     ASSERT_EQUAL(poly[0], 1);
     ASSERT_EQUAL(poly[1], 2);
